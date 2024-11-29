@@ -1,0 +1,205 @@
+ADC
+#include &lt;LPC214x.h&gt;
+#include &quot;UART0.c&quot;
+unsigned int data,adc_data,count;
+unsigned char data_rcv[3], result;
+unsigned char message_1[] = &quot;\n\rADC data in HEX=&quot;;
+unsigned char crlf_1[] = &quot;\n\r&quot;;
+void adcdelay(unsigned int time) {
+unsigned int i, j;
+for (i = 1; i &lt; time; i++) {
+for (j = 0; j &lt; 10000; j++) {
+}
+}
+}
+void Init_ADC(void) {
+PINSEL1 = 0x01000000;
+AD0CR = 0x00200302;
+}
+unsigned int Read_ADC_1(void) {
+AD0CR = 0x01200302;
+while (!(AD0DR1 &amp; 0x80000000));
+data=((AD0DR1&gt;&gt;6)&amp;0x3FF);
+
+return data;
+}
+void hex_ascii_transmit() {
+for (count = 0; count &lt; 3; count++) {
+if (data_rcv[count] &lt; 10) {
+result = data_rcv[count] + 0x30;
+} else {
+result = data_rcv[count] + 0x37;
+}
+UART0_PutChar(result);
+}
+
+UART0_Puts(crlf_1);
+}
+void nibble_sep(void) {
+data_rcv[2] = (adc_data &amp; 0x0000000F);
+data_rcv[1] = (adc_data &amp; 0x000000F0) &gt;&gt; 4;
+data_rcv[0] = (adc_data &amp; 0x00000F00) &gt;&gt; 8; }
+int main(void) {
+Init_ADC();
+UART0Init();
+while (1) {
+adc_data = Read_ADC_1();
+adcdelay(100);
+nibble_sep();
+UART0_Puts(message_1);
+hex_ascii_transmit();
+}
+return 0;
+}
+OUTPUT:
+
+ADC Temperature
+Adc_temp.c
+#include &lt;LPC214x.h&gt;
+#include &quot;UART0.c&quot;
+#include &lt;math.h&gt;
+#include &quot;float_to_ascii.c&quot;
+unsigned int data,adc_data,count;
+unsigned char data_rcv[3], result;
+unsigned char message_1[] = &quot;\n\rADC data in HEX=&quot;;
+unsigned char crlf_1[] = &quot;\n\r&quot;;
+float temp;
+unsigned char res[20];
+unsigned char message_2[]=&quot;\n\rTemperature=&quot;;
+void adcdelay(unsigned int time) {
+unsigned int i, j;
+for (i = 1; i &lt; time; i++) {
+for (j = 0; j &lt; 10000; j++) {
+}
+}
+}
+void Init_ADC(void) {
+PINSEL1 = 0x01000000;
+AD0CR = 0x00200302;
+PINSEL1 |= 0x04000000;
+AD0CR |= 0x00200304;
+}
+unsigned int Read_ADC_1(void) {
+AD0CR = 0x01200302;
+while (!(AD0DR1 &amp; 0x80000000));
+data=((AD0DR1&gt;&gt;6)&amp;0x3FF)
+;
+return data;
+
+}
+unsigned int Read_ADC_2(void) {
+AD0CR = 0x01200304;
+while (!(AD0DR2 &amp; 0x80000000));
+data=((AD0DR2&gt;&gt;6)&amp;0x3FF)
+;
+return data;
+}
+void hex_ascii_transmit() {
+for (count = 0; count &lt; 3; count++) {
+if (data_rcv[count] &lt; 10) {
+result = data_rcv[count] + 0x30;
+} else {
+result = data_rcv[count] + 0x37;
+}
+UART0_PutChar(result);
+}
+UART0_Puts(crlf_1);
+}
+void nibble_sep(void) {
+data_rcv[2] = (adc_data &amp; 0x0000000F);
+data_rcv[1] = (adc_data &amp; 0x000000F0) &gt;&gt; 4;
+data_rcv[0] = (adc_data &amp; 0x00000F00) &gt;&gt; 8; }
+int main(void) {
+Init_ADC();
+UART0Init();
+while (1) {
+adc_data = Read_ADC_1();
+adcdelay(100);
+nibble_sep();
+UART0_Puts(message_1);
+hex_ascii_transmit();
+adc_data = Read_ADC_2();
+
+adcdelay(100);
+temp=adc_data/3.1;
+ftoa(temp,res,2);
+UART0_Puts(message_2);
+UART0_Puts(res);
+UART0_Puts(crlf_1);
+}
+
+return 0;
+}
+
+Float_to_ascii.c
+#include &lt;math.h&gt;
+void reverse(char *str, int len) {
+int i = 0, j = len - 1, temp;
+while (i &lt; j) {
+temp = str[i];
+str[i] = str[j];
+str[j] = temp;
+i++;
+j--;
+}
+}
+int intToStr(int x, char str[], int d) {
+int i = 0;
+while (x) {
+str[i++] = (x % 10) + &#39;0&#39;;
+x = x / 10;
+}
+while (i &lt; d)
+str[i++] = &#39;0&#39;;
+
+reverse(str, i);
+str[i] = &#39;\0&#39;;
+return i;
+}
+void ftoa(float n, unsigned char *res, int afterpoint) {
+int ipart = (int)n;
+float fpart = n - (float)ipart;
+int i = intToStr(ipart, res, 0);
+if (afterpoint != 0) {
+res[i] = &#39;.&#39;;
+fpart = fpart * pow(10, afterpoint);
+intToStr((int)fpart, res + i + 1, afterpoint);
+}
+}
+
+UART0.c
+#include&lt;lpc214x.h&gt;
+void UART0Init()
+{
+PINSEL0 |= 0x00000005;
+U0FCR=0x07;
+U0LCR= 0X83;
+U0DLL=0X62;
+U0DLM=0X00;
+U0LCR=0X03;
+}
+unsigned char UART0_PutChar(unsigned char ch)
+{
+if(ch == &#39;\n&#39;)
+{
+while(!(U0LSR&amp;0x20));
+
+U0THR = 0x0D;
+}
+while(!(U0LSR&amp;0x20));
+return(U0THR = ch);
+}
+unsigned char UART0_GetChar(void)
+{
+while(!(U0LSR&amp;0x01));
+return(U0RBR);
+}
+void UART0_Puts(unsigned char *str)
+{
+while(1)
+{
+if(*str == &#39;\0&#39;)
+break ;
+UART0_PutChar(*str++);
+}
+}
