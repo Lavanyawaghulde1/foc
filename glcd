@@ -1,3 +1,5 @@
+plus
+
 #include&lt;lpc214x.h&gt;
 #define LCD_data 0X00FF0000
 #define Greset 1&lt;&lt;24
