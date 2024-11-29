@@ -1,0 +1,114 @@
+Triangle Wave Form :
+#include&lt;lpc214x.h&gt;
+#define shift 6
+#define mask 0x0000FFC0
+void dac_init()
+{
+PINSEL1 |= 1&lt;&lt;19;
+DACR = 1&lt;&lt;16;
+}
+int main()
+{
+unsigned int i;
+dac_init();
+while(1){
+
+for(i=0;i&lt;1024;i++)
+{
+DACR=((i&lt;&lt;shift)&amp; mask);
+}
+for(i=1023;i&gt;0;i--)
+{
+DACR=((i&lt;&lt;shift)&amp; mask);
+}
+}
+}
+
+Output:
+
+Sawtooth Wave Form :
+#include&lt;lpc214x.h&gt;
+#define shift 6
+#define mask 0x0000FFC0
+
+void dac_init()
+{
+PINSEL1 |= 1&lt;&lt;19;
+DACR = 1&lt;&lt;16;
+}
+int main()
+{
+unsigned int i;
+dac_init();
+while(1){
+
+for(i=0;i&lt;1024;i++)
+{
+DACR=((i&lt;&lt;shift)&amp; mask);
+}
+}
+}
+
+Output:
+
+Square WaveForm :
+#include&lt;lpc214x.h&gt;
+#define shift 6
+#define mask 0x0000FFC0
+
+void delay(unsigned int time)
+{
+for(int i=0;i&lt;time;i++)
+for(int j=0;j&lt;256;j++);
+}
+void dac_init()
+{
+PINSEL1 |= 1&lt;&lt;19;
+DACR = 1&lt;&lt;16;
+}
+int main()
+{
+dac_init();
+while(1){
+
+DACR = 0x00000000;
+delay(5);
+DACR=0x0000FFC0;
+delay(5);
+
+}
+}
+Output :
+
+Steps Wave Form :
+#include&lt;lpc214x.h&gt;
+#define shift 6
+#define mask 0x0000FFC0
+void delay(unsigned int time)
+{
+for(int i=0;i&lt;256;i++)
+for(int j=0;j&lt;time;j++);
+}
+void dac_init()
+{
+PINSEL1 |= 1&lt;&lt;19;
+DACR = 1&lt;&lt;16;
+}
+int main()
+{
+unsigned int i;
+dac_init();
+while(1){
+for(i=0;i&lt;1024;i=i+341)
+{
+DACR=((i&lt;&lt;shift)&amp; mask);
+delay(5);
+}
+for(i=1023;i&gt;0;i=i-341)
+
+{
+DACR=((i&lt;&lt;shift)&amp; mask);
+delay(5);
+}
+}
+}
