@@ -1,0 +1,32 @@
+#include&lt;lpc214x.h&gt;
+unsigned char tx_msg[20] = &quot;\n Lavanya_Ayushi&quot;;
+void ms_delay(unsigned int time)
+{
+unsigned int i , j ;
+for(i = 0 ; i&lt;time;i++)
+for(j= 0; j&lt; 274 ; j++);
+}
+void uart_init()
+{
+PINSEL0 = 0x00000005;
+U0FCR=0x07;
+U0LCR= 0X83;
+U0DLL=0X62;
+U0DLM=0X00;
+U0LCR=0X03;
+}
+int main()
+{
+unsigned char rev_data;
+uart_init();
+while(1)
+{
+
+ms_delay(500);
+while(!(U0LSR&amp;0X01));
+rev_data =U0RBR;
+while(!(U0LSR&amp;0X20));
+U0THR= rev_data;
+}
+return 0;
+}
